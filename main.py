@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import time
 import pandas as pd
 import csv
+import logging
 
 # ==========================
 # CONFIGURAÇÃO DO SELENIUM
@@ -31,6 +32,11 @@ chrome_options.add_argument('--disable-blink-features=AutomationControlled')  # 
 
 # Carrega o navegador
 driver = webdriver.Chrome(service=chrome_services, options=chrome_options)
+
+# Logger
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(name='LOG')
+
 # URL da raspagem
 url: str = "https://www.infojobs.com.br/empregos-em-sao-paulo.aspx"
 
@@ -52,21 +58,32 @@ try:
         input_field.send_keys(search)
     buscar_vaga('python')
 
-    # Busca e seleciona a cidade
+    # Busca e seleciona a cidade        *Modificar XPATH Futuramente*
     def buscar_cidade(search: str) -> None:
+        # Busca
         input_field = driver.find_element(By.CSS_SELECTOR, 'input[id="city"]')
         input_field.clear()        
         input_field.send_keys(search)
 
+        # Aguarda o elemento da busca
         wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="searchHeader"]/div[1]/div/div[1]/div[3]/div[2]/div/div[2]/div/div[2]')))
         
+        # Clicka no elemento
         city = driver.find_element(By.XPATH, '//*[@id="searchHeader"]/div[1]/div/div[1]/div[3]/div[2]/div/div[2]/div/div[2]')
-        city.click()
+        if not city:
+            logger.info(f"Elemento city não encontrado.")
+        else:
+            city.click()
 
+        # Aguarda o elemento
         wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="searchHeader"]/div[1]/div/div[1]/div[4]/a')))
 
+        # Botão de busca
         btn = driver.find_element(By.XPATH, '//*[@id="searchHeader"]/div[1]/div/div[1]/div[4]/a')
-        btn.click()
+        if not btn:
+            logger.info("Elemento btn não encontrado.")
+        else:
+            btn.click()
     buscar_cidade('Recife - PE')
 
     # Esperar carregar
@@ -91,17 +108,18 @@ try:
             scroll_count += 1
     scroll(driver, 1.5)
     
-    # Percorre as vagas do site e adiciona na lista
-    def achar_vagas() -> list:
+    # Percorre as vagas do site e adiciona na lista         *Mofificar XPATH Futuramente*
+    def achar_vagas() -> tuple[dict, dict]:
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, 'html.parser')
 
         list_cards = soup.find_all('div', class_='card')
-        dados_vagas: list = []
-        count = 1
+        dados_vagas: list[dict] = []
+        descricoes_vagas: list[dict] = []
+        count: int = 1
 
         if not list_cards:        
-            print("Nenhum Card encontrado")
+            logger.info(f"Nenhum card encontrado.")
 
         for card in list_cards:
             # Click nos cards da vaga e pega os dados
@@ -136,39 +154,39 @@ try:
                     wait.until(EC.presence_of_element_located((By.ID, 'vacancylistDetail')))
                     try:
                         div_vacancy = driver.find_element(By.XPATH, '//*[@id="vacancylistDetail"]')   
-                        
+                        time.sleep(0.3)
+
                         # Local
                         local_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[1]')
-                        local_vaga = local_vaga.text.strip()
+                        local_vaga: str = local_vaga.text.strip()
                         time.sleep(0.3)
                         
                         # Salario
                         salario_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[2]')
-                        salario_vaga = salario_vaga.text.strip()
+                        salario_vaga: str = salario_vaga.text.strip()
                         time.sleep(0.3)
 
                         # Tipo
                         tipo_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[3]')
-                        tipo_vaga = tipo_vaga.text.strip()
+                        tipo_vaga: str = tipo_vaga.text.strip()
                         time.sleep(0.3)
 
                         # descricao
                         descricao_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="vacancylistDetail"]/div[2]')
-                        descricao_vaga = descricao_vaga.text.strip()
-                        time.sleep(0.3)
+                        descricao_vaga: str = descricao_vaga.text.strip()
 
-                        print(f"Dados da vaga {count} extraido ✅")
+                        logger.info(f"Dados da vaga {count} extraido ✅")
 
                     except Exception as e:
-                        print(f"Erro ao extrair dados da vaga {count}")
-                        #print(e)
+                        logger.info(f"Erro ao extrair dados da vaga {count}")
                         salario_vaga, local_vaga, tipo_vaga, descricao_vaga = "N/A", "N/A", "N/A", "N/A"
 
                 else:
                     continue
-            
-                # Cria o objeto 
-                obj_vaga = {
+                
+                # Cria os objetos
+                _url: str = 'https://www.infojobs.com.br' 
+                obj_vaga: dict = {
                     'ID': count,
                     'VAGA': name_vaga,
                     'EMPRESA': name_empresa,
@@ -176,33 +194,35 @@ try:
                     'SALARIO': salario_vaga,
                     'TIPO': tipo_vaga,
                     'DESCRICAO': descricao_vaga,
-                    'LINK_VAGA': link_vaga,
+                    'LINK_VAGA': _url + link_vaga,
                     'LINK_EMPRESA': link_empresa
-                }
-                    
+                }   
+
                 # Adiciona o obj_vaga a lista de vagas
                 dados_vagas.append(obj_vaga)
                 count += 1
     
-        return dados_vagas
+        return (dados_vagas, descricoes_vagas)
     #Execução
-    lista_vagas = achar_vagas()
+    lista_vagas : list[dict] = achar_vagas()
 
     # Salvando em CSV
     if not lista_vagas:
-        print("Nenhuma Vaga na lista")
+        logger.info("Nenhuma Vaga na lista")
     else:
         # Criando DataFrame
-        data = pd.DataFrame(lista_vagas)
-
+        data = pd.DataFrame(lista_vagas[0])
+            
         # Salvando CSV
         data.to_csv(
-            "vagas_python.csv",
+            "teste_python_vagas.csv",
             index=False,
             encoding='utf-8-sig',
             sep=';',
             lineterminator='\n',
             quoting=csv.QUOTE_MINIMAL
         )
+
+        
 finally:
     driver.quit()
