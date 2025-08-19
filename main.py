@@ -5,6 +5,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
+from datetime import datetime
 import time
 import pandas as pd
 import csv
@@ -43,6 +44,10 @@ url: str = "https://www.infojobs.com.br/empregos-em-sao-paulo.aspx"
 # Função para aguardar
 wait = WebDriverWait(driver, 10)
 
+# Variaveis de busca
+_vaga = 'Promotor Vendas'
+_cidade = 'Recife - PE'
+
 try:
     driver.get(url)
 
@@ -56,7 +61,7 @@ try:
     def buscar_vaga(search: str) -> None:
         input_field = driver.find_element(By.CSS_SELECTOR, 'input[id="keywordsCombo"]')
         input_field.send_keys(search)
-    buscar_vaga('python')
+    buscar_vaga(_vaga)
 
     # Busca e seleciona a cidade        *Modificar XPATH Futuramente*
     def buscar_cidade(search: str) -> None:
@@ -84,7 +89,7 @@ try:
             logger.info("Elemento btn não encontrado.")
         else:
             btn.click()
-    buscar_cidade('Recife - PE')
+    buscar_cidade(_cidade)
 
     # Esperar carregar
     wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
@@ -109,13 +114,12 @@ try:
     scroll(driver, 1.5)
     
     # Percorre as vagas do site e adiciona na lista         *Mofificar XPATH Futuramente*
-    def achar_vagas() -> tuple[dict, dict]:
+    def achar_vagas() -> list[dict]:
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, 'html.parser')
 
         list_cards = soup.find_all('div', class_='card')
         dados_vagas: list[dict] = []
-        descricoes_vagas: list[dict] = []
         count: int = 1
 
         if not list_cards:        
@@ -173,7 +177,7 @@ try:
 
                         # descricao
                         descricao_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="vacancylistDetail"]/div[2]')
-                        descricao_vaga: str = descricao_vaga.text.strip()
+                        descricao_vaga: list[str] = [descricao_vaga.text.strip()]
 
                         logger.info(f"Dados da vaga {count} extraido ✅")
 
@@ -202,7 +206,7 @@ try:
                 dados_vagas.append(obj_vaga)
                 count += 1
     
-        return (dados_vagas, descricoes_vagas)
+        return dados_vagas
     #Execução
     lista_vagas : list[dict] = achar_vagas()
 
@@ -211,11 +215,11 @@ try:
         logger.info("Nenhuma Vaga na lista")
     else:
         # Criando DataFrame
-        data = pd.DataFrame(lista_vagas[0])
+        data = pd.DataFrame(lista_vagas)
             
         # Salvando CSV
         data.to_csv(
-            "teste_python_vagas.csv",
+            f"vaga-{(f"{_vaga.split()[0]}-{_vaga.split()[1]}") if len(_vaga.split()) > 1 else _vaga}-{_cidade}-{datetime.today().date()}.csv",
             index=False,
             encoding='utf-8-sig',
             sep=';',
