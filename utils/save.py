@@ -3,10 +3,10 @@ import csv
 from datetime import datetime
 from logs import log
 
-def save_to_csv(data_base: list, vaga: str, cidade: str):
+def to_csv(data_base: list, vaga: str, cidade: str):
     # Salvando em CSV
     if not data_base:
-        log.logger.info("Lista de vagas está vazia.")
+        log.logger.info("Lista de vagas está vazia ❌")
     else:
         # Criando DataFrame
         data = pd.DataFrame(data_base)

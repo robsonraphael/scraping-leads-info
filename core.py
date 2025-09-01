@@ -45,7 +45,7 @@ wait = WebDriverWait(driver, 10)
 def close_cookie():
     btn = driver.find_element(By.XPATH, '//*[@id="didomi-notice-agree-button"]')
     if not btn:
-        log.logger.info("Botão de cookie não encontrado.")
+        log.logger.info("Botão de cookie não encontrado ❌")
     btn.click()
 
 # Pesquisa a vaga
@@ -66,7 +66,7 @@ def search_city(city: str) -> None:
         # Clicka no elemento
         city = driver.find_element(By.XPATH, '//*[@id="searchHeader"]/div[1]/div/div[1]/div[3]/div[2]/div/div[2]/div/div[2]')
         if not city:
-            log.logger.info(f"Cidade não encontrada.")
+            log.logger.info(f"Cidade não encontrada ❌")
         else:
             city.click()
 
@@ -76,7 +76,7 @@ def search_city(city: str) -> None:
         # Botão de busca
         btn = driver.find_element(By.XPATH, '//*[@id="searchHeader"]/div[1]/div/div[1]/div[4]/a')
         if not btn:
-            log.logger.info("Botão de busca não encontrado.")
+            log.logger.info("Botão de busca não encontrado ❌")
         else:
             btn.click()
     
@@ -110,83 +110,83 @@ def get_vagas() -> list[dict]:
         log.logger.info(f"Nenhum card encontrado.")
 
     for card in list_cards:
-        # Click nos cards da vaga e pega os dados
-        if "js_rowCard" in card['class']:
-            # Nome e link da vaga  
-            name_vaga = card.find('h2')
-            if not name_vaga:
-                name_vaga = "N/A"
-                link_vaga = "N/A"
-            else:
-                link_vaga = name_vaga.parent
-                link_vaga = link_vaga.get('href')
-                name_vaga = name_vaga.get_text().strip()
-        
-            # Nome e link da empresa
-            name_empresa = card.find('div', class_='d-flex align-items-baseline')
-            if not name_empresa:
-                name_empresa = "N/A"
-                link_empresa = "N/A"
-            else:
-                if name_empresa.find('a'):
-                    link_empresa = name_empresa.find('a')['href']
-                    name_empresa = name_empresa.find('a').get_text().strip()
+            # Click nos cards da vaga e pega os dados
+            if "js_rowCard" in card['class']:
+                # Nome e link da vaga  
+                name_vaga = card.find('h2')
+                if not name_vaga:
+                    name_vaga = "N/A"
+                    link_vaga = "N/A"
                 else:
-                    name_empresa = name_empresa.find('div', class_='text-body').get_text().strip() if name_empresa.find('div', class_='text-body') else "N/A"
+                    link_vaga = name_vaga.parent
+                    link_vaga = link_vaga.get('href')
+                    name_vaga = name_vaga.get_text().strip()
+            
+                # Nome e link da empresa
+                name_empresa = card.find('div', class_='d-flex align-items-baseline')
+                if not name_empresa:
+                    name_empresa = "N/A"
                     link_empresa = "N/A"
-            
-            # vacancy
-            if not 'active' in card['class'] and 'active' not in card['class']: 
-                element = card.find('div')
-                driver.find_element(By.ID, element['id']).click()
-                wait.until(EC.presence_of_element_located((By.ID, 'vacancylistDetail')))
-                try:
-                    div_vacancy = driver.find_element(By.XPATH, '//*[@id="vacancylistDetail"]')   
-                    time.sleep(0.3)
+                else:
+                    if name_empresa.find('a'):
+                        link_empresa = name_empresa.find('a')['href']
+                        name_empresa = name_empresa.find('a').get_text().strip()
+                    else:
+                        name_empresa = name_empresa.find('div', class_='text-body').get_text().strip() if name_empresa.find('div', class_='text-body') else "N/A"
+                        link_empresa = "N/A"
+                
+                # vacancy
+                if not 'active' in card['class'] and 'active' not in card['class']: 
+                    element = card.find('div')
+                    driver.find_element(By.ID, element['id']).click()
+                    wait.until(EC.presence_of_element_located((By.ID, 'vacancylistDetail')))
+                    try:
+                        div_vacancy = driver.find_element(By.XPATH, '//*[@id="vacancylistDetail"]')   
+                        time.sleep(0.3)
 
-                    # Local
-                    local_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[1]')
-                    local_vaga: str = local_vaga.text.strip()
-                    time.sleep(0.3)
-                    
-                    # Salario
-                    salario_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[2]')
-                    salario_vaga: str = salario_vaga.text.strip()
-                    time.sleep(0.3)
+                        # Local
+                        local_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[1]')
+                        local_vaga: str = local_vaga.text.strip()
+                        time.sleep(0.3)
+                        
+                        # Salario
+                        salario_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[2]')
+                        salario_vaga: str = salario_vaga.text.strip()
+                        time.sleep(0.3)
 
-                    # Tipo
-                    tipo_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[3]')
-                    tipo_vaga: str = tipo_vaga.text.strip()
-                    time.sleep(0.3)
+                        # Tipo
+                        tipo_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[3]')
+                        tipo_vaga: str = tipo_vaga.text.strip()
+                        time.sleep(0.3)
 
-                    # descricao
-                    descricao_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="vacancylistDetail"]/div[2]')
-                    descricao_vaga: list[str] = [descricao_vaga.text.strip()]
+                        # descricao
+                        descricao_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="vacancylistDetail"]/div[2]')
+                        descricao_vaga: list[str] = [descricao_vaga.text.strip()]
 
-                    log.logger.info(f"Dados da vaga {count} extraido ✅")
+                        log.logger.info(f"Dados da vaga {count} extraido ✅")
 
-                except Exception as e:
-                    log.logger.info(f"Erro ao extrair dados da vaga {count}")
-                    salario_vaga, local_vaga, tipo_vaga, descricao_vaga = "N/A", "N/A", "N/A", "N/A"
+                    except Exception as e:
+                        log.logger.info(f"Erro a extrair dados da vaga {count} ❌")
+                        salario_vaga, local_vaga, tipo_vaga, descricao_vaga = "N/A", "N/A", "N/A", "N/A"
 
-            else:
-                continue
-            
-            # Cria os objetos
-            _url: str = 'https://www.infojobs.com.br' 
-            obj_vaga: dict = {
-                'ID': count,
-                'VAGA': name_vaga,
-                'EMPRESA': name_empresa,
-                'LOCAL': local_vaga,
-                'SALARIO': salario_vaga,
-                'TIPO': tipo_vaga,
-                'DESCRICAO': descricao_vaga,
-                'LINK_VAGA': _url + link_vaga,
-                'LINK_EMPRESA': link_empresa
-            }   
+                else:
+                    continue
+                
+                # Cria os objetos
+                _url: str = 'https://www.infojobs.com.br' 
+                obj_vaga: dict = {
+                    'ID': count,
+                    'VAGA': name_vaga,
+                    'EMPRESA': name_empresa,
+                    'LOCAL': local_vaga,
+                    'SALARIO': salario_vaga,
+                    'TIPO': tipo_vaga,
+                    'DESCRICAO': descricao_vaga,
+                    'LINK_VAGA': _url + link_vaga,
+                    'LINK_EMPRESA': link_empresa
+                }   
 
-            # Adiciona o obj_vaga a lista de vagas
-            data_base.append(obj_vaga)
-            count += 1
+                # Adiciona o obj_vaga a lista de vagas
+                data_base.append(obj_vaga)
+                count += 1
     return data_base

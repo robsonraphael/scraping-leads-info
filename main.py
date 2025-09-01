@@ -1,40 +1,49 @@
-import scraper
-from utils import output
+import core
+import click
+from rich.console import Console
+from utils import save
 
 # URL da raspagem
 URL: str = "https://www.infojobs.com.br/empregos-em-sao-paulo.aspx"
 
+# Console
+console = Console()
+
 # Variaveis de busca
-_vaga = 'Promotor Vendas'
-_cidade = 'Recife - PE'
+@click.command()
+@click.option('--vaga', required=True, help="Vaga para buscar.")
+@click.option('--cidade', default="São Paulo - SP", help="Cidade para filtrar.")
 
-try:
-    # Pesquis a pagina
-    scraper.load_page(URL)
+def main(vaga, cidade):
+    "Scraping de leads INFO-JOBS"
+    console.print("[bold blue]Iniciando scraping...[bold blue]")
+    try:
+        # Pesquisa a pagina
+        core.load_page(URL)
 
-    # Espera toda a página carregar
-    scraper.wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+        # Espera toda a página carregar
+        core.wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
 
-    # Fecha a permissão de cookie
-    scraper.close_cookie()
+        # Fecha a permissão de cookie
+        core.close_cookie()
 
-    # Pesquisa a vaga
-    scraper.search_vaga(_vaga)
+        # Pesquisa a vaga
+        core.search_vaga(vaga)
+        # Busca e seleciona a cidade
+        core.search_city(cidade)
 
-    # Busca e seleciona a cidade
-    scraper.search_city(_cidade)
-
-    # Esperar carregar
-    scraper.wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
-
-    # Scrolla a pagina ate o final
-    scraper.scroll_page()
-    
-    # Percorre as vagas do site e adiciona na lista
-    lista_de_vagas = scraper.get_vagas()
-
-    # salva o arquivo csv
-    output.save_to_csv(lista_de_vagas, _vaga, _cidade)
+        # Esperar carregar
+        core.wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+                
+        # Scrolla a pagina ate o final
+        core.scroll_page()
         
-finally:
-    scraper.quit()
+        # Percorre as vagas do site e adiciona na lista
+        lista_de_vagas = core.get_vagas()
+
+        # salva o arquivo csv
+        save.to_csv(data_base=lista_de_vagas, vaga=vaga, cidade=cidade)
+        console.print("[bold green]Scraping salvo [bold green]")
+    finally:
+        core.quit()
+main()
