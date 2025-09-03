@@ -9,7 +9,7 @@ import time
 from logs import log
 
 # ==========================
-# CONFIGURAÇÃO DO SELENIUM
+# CONFIGURAÇÃO SELENIUM
 # ==========================
 chrome_services = Service()
 chrome_options = Options()
@@ -45,7 +45,7 @@ wait = WebDriverWait(driver, 10)
 def close_cookie():
     btn = driver.find_element(By.XPATH, '//*[@id="didomi-notice-agree-button"]')
     if not btn:
-        log.logger.info("Botão de cookie não encontrado ❌")
+        return log.logger.info("Botão de cookie não encontrado ❌")
     btn.click()
 
 # Pesquisa a vaga
@@ -142,22 +142,22 @@ def get_vagas() -> list[dict]:
                     wait.until(EC.presence_of_element_located((By.ID, 'vacancylistDetail')))
                     try:
                         div_vacancy = driver.find_element(By.XPATH, '//*[@id="vacancylistDetail"]')   
-                        time.sleep(0.3)
+                        time.sleep(0.2)
 
                         # Local
                         local_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[1]')
                         local_vaga: str = local_vaga.text.strip()
-                        time.sleep(0.3)
+                        time.sleep(0.2)
                         
                         # Salario
                         salario_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[2]')
                         salario_vaga: str = salario_vaga.text.strip()
-                        time.sleep(0.3)
+                        time.sleep(0.2)
 
                         # Tipo
                         tipo_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="VacancyHeader"]/div[1]/div[1]/div[2]/div[3]')
                         tipo_vaga: str = tipo_vaga.text.strip()
-                        time.sleep(0.3)
+                        time.sleep(0.2)
 
                         # descricao
                         descricao_vaga = div_vacancy.find_element(By.XPATH, '//*[@id="vacancylistDetail"]/div[2]')

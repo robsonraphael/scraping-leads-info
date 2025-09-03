@@ -1,5 +1,6 @@
 import core
 import click
+import time
 from rich.console import Console
 from utils import save
 
@@ -9,14 +10,9 @@ URL: str = "https://www.infojobs.com.br/empregos-em-sao-paulo.aspx"
 # Console
 console = Console()
 
-# Variaveis de busca
-@click.command()
-@click.option('--vaga', required=True, help="Vaga para buscar.")
-@click.option('--cidade', default="São Paulo - SP", help="Cidade para filtrar.")
-
-def main(vaga, cidade):
-    "Scraping de leads INFO-JOBS"
-    console.print("[bold blue]Iniciando scraping...[bold blue]")
+def search(vaga, cidade):
+    "Executa uma Busca e extrai os dados."
+    console.print(f"\n[bold blue]Iniciando scraping...[bold blue]")
     try:
         # Pesquisa a pagina
         core.load_page(URL)
@@ -46,4 +42,31 @@ def main(vaga, cidade):
         console.print("[bold green]Scraping salvo [bold green]")
     finally:
         core.quit()
-main()
+        # reinicia o driver
+        core.driver = core.webdriver.Chrome(service=core.chrome_services, options=core.chrome_options)
+
+# Variaveis de busca
+@click.command()
+@click.option('--vaga', multiple=True, required=True, help="Vaga para buscar.")
+@click.option('--cidade', default="São Paulo - SP", help="Cidade para filtrar.")
+
+def main(vaga, cidade):
+    "Scraping Info Jobs"
+    try:
+        # Se vaga e cidade forem fornecidas, executa uma única busca
+        if len(vaga) == 1:
+            search(vaga, cidade)
+        else:
+            with click.progressbar(vaga, label='Concluido') as bar:
+                for vaga in bar:
+                    core.driver.execute_script(f"window.open('{URL}','_blank');")
+                    core.driver.switch_to.window(core.driver.window_handles[1])
+                    search(vaga, cidade)
+                    time.sleep(2)
+    except Exception as e:
+        console.print(f"[red]Erro geral: {e}[/red]")
+    finally:
+        core.quit()
+
+if __name__ == "__main__":
+    main()
